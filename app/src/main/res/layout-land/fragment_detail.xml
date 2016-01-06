@@ -1,0 +1,174 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/movieDetailsLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/light_blue"
+    android:orientation="horizontal"
+    tools:context="com.example.android.sunshine.app.DetailActivity.DetailFragment">
+
+    <!--  ~~~~~~~~~~~~~~~~~~MOVIE POSTER at the top~~~~~~~~~~~~~~~~~ -->
+    <ImageView
+        android:id="@+id/iv_movie_backdrop"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1" />
+
+    <!-- ~~~~~~~~~~MOVIE DETAILS in the second half~~~~~~~~~~~~~~~~ -->
+    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <!-- *********************  MOVIE TITLE *************************-->
+
+            <TextView
+                android:id="@+id/tv_movie_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="Condensed bold-italic"
+                android:paddingBottom="10dp"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:paddingTop="15dp"
+                android:text="MOVIE_TITLE"
+                android:textAlignment="center"
+                android:textAppearance="?android:textAppearanceLarge"
+                android:textColor="@color/white"
+                android:textSize="50sp" />
+
+            <!-- *********************  MOVIE RATING & VOTED BY TITLE *************************-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:divider="@drawable/divider_light_blue_vertical"
+                android:showDividers="middle"
+                >
+
+                <TextView
+                    android:id="@+id/tv_movie_rating_title"
+                    style="@style/MovieDetail_StyleForHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@color/dark_blue"
+                    android:paddingLeft="@dimen/activity_horizontal_margin"
+                    android:text="RATING"
+                    android:textAlignment="center" />
+
+                <TextView
+                    android:id="@+id/tv_movie_votedby_title"
+                    style="@style/MovieDetail_StyleForHeader"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@color/dark_blue"
+                    android:paddingLeft="@dimen/activity_horizontal_margin"
+                    android:text="VOTED BY"
+                    android:textAlignment="center" />
+
+            </LinearLayout>
+            <!-- *********************  MOVIE RATING & VOTED BY TEXT *************************-->
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:divider="@drawable/divider_dark_blue_vertical"
+                android:showDividers="middle"
+                >
+
+                <TextView
+                    android:id="@+id/tv_movie_rating"
+                    style="@style/MovieDetail_StyleForParagraph"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingLeft="@dimen/activity_horizontal_margin"
+                    android:text="3.5"
+                    android:textAlignment="center" />
+
+                <TextView
+                    android:id="@+id/tv_movie_votedby"
+                    style="@style/MovieDetail_StyleForParagraph"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingLeft="@dimen/activity_horizontal_margin"
+                    android:text="count loading.."
+                    android:textAlignment="center" />
+
+            </LinearLayout>
+            <!-- *********************  MOVIE GENRE *************************-->
+            <TextView
+                android:id="@+id/tv_movie_genre_title"
+                style="@style/MovieDetail_StyleForHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@color/dark_blue"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:text="GENRE"
+                android:textAlignment="center" />
+
+            <TextView
+                android:id="@+id/tv_movie_genre"
+                style="@style/MovieDetail_StyleForParagraph"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:text="movie genre loading.."
+                android:textAlignment="center" />
+            <!-- *********************  MOVIE RELEASE DATE *************************-->
+            <TextView
+                android:id="@+id/tv_movie_releasedate_title"
+                style="@style/MovieDetail_StyleForHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@color/dark_blue"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:text="RELEASE DATE"
+                android:textAlignment="center" />
+
+            <TextView
+                android:id="@+id/tv_movie_releasedate"
+                style="@style/MovieDetail_StyleForParagraph"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:text="date loading.."
+                android:textAlignment="center" />
+            <!-- *********************  MOVIE OVERVIEW *************************-->
+            <TextView
+                android:id="@+id/tv_movie_overview_title"
+                style="@style/MovieDetail_StyleForHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@color/dark_blue"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:text="MOVIE OVERVIEW"
+                android:textAlignment="center" />
+
+            <TextView
+                android:id="@+id/tv_movie_overview"
+                style="@style/MovieDetail_StyleForParagraph"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:text="MOVIE_SYNOPSIS" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>
