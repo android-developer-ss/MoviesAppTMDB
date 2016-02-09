@@ -8,8 +8,6 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.androidapps.snehal.moviesapp.MovieDetails.DetailFragment;
-
 public class MainActivity extends AppCompatActivity implements MainActivityFragment.Callback {
 
     private final String DETAILFRAGMENT_TAG = "FFTAG";
@@ -27,7 +25,7 @@ public class MainActivity extends AppCompatActivity implements MainActivityFragm
         mSortBySetting = Utility.getSortBySetting(this);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.fragment, new MainActivityFragment(), DETAILFRAGMENT_TAG)
+                    .replace(R.id.fragment, new MainActivityFragment(), DETAILFRAGMENT_TAG)
                     .commit();
         }
 
@@ -78,10 +76,10 @@ public class MainActivity extends AppCompatActivity implements MainActivityFragm
             if (null != ff) {
                 ff.onSortBySettingChanged();
             }
-            DetailFragment df = (DetailFragment) getSupportFragmentManager().findFragmentByTag(DETAILFRAGMENT_TAG);
-            if (null != df) {
-                df.onSortBySettingChanged(sortBySetting);
-            }
+//            DetailFragment df = (DetailFragment) getSupportFragmentManager().findFragmentByTag(DETAILFRAGMENT_TAG);
+//            if (null != df) {
+//                df.onSortBySettingChanged(sortBySetting);
+//            }
             mSortBySetting = sortBySetting;
         }
     }

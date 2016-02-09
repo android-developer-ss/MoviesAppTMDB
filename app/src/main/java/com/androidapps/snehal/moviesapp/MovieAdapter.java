@@ -34,13 +34,16 @@ public class MovieAdapter extends CursorAdapter {
 
         ImageView imageView = (ImageView)view;
         //tv.setText(convertCursorRowToUXFormat(cursor));
-        Picasso.with(context).load(convertCursorRowToUXFormat(cursor)).placeholder(R.drawable.ic_launcher_movie).into(imageView);
+        Picasso.with(context)
+                .load(convertCursorRowToUXFormat(cursor))
+                .placeholder(R.drawable.ic_launcher_movie)
+                .into(imageView);
 
     }
 
     //----------------------------------------------------------------------------------------------
     private String convertCursorRowToUXFormat(Cursor cursor) {
-        final String base_poster_path = "http://image.tmdb.org/t/p/w185/";
+//        final String base_poster_path = "http://image.tmdb.org/t/p/w185/";
         // get row indices for our cursor
 //        int idx_max_temp = cursor.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_MAX_TEMP);
 //        int idx_min_temp = cursor.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_MIN_TEMP);

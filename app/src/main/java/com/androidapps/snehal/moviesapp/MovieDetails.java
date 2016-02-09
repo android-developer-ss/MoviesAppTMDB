@@ -1,6 +1,5 @@
 package com.androidapps.snehal.moviesapp;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -12,6 +11,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -22,8 +22,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.androidapps.snehal.moviesapp.data.MovieContract;
+import com.google.android.youtube.player.YouTubeInitializationResult;
+import com.google.android.youtube.player.YouTubePlayer;
+import com.google.android.youtube.player.YouTubePlayerSupportFragment;
+import com.google.android.youtube.player.YouTubePlayerView;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
@@ -36,13 +41,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Vector;
 
 
 public class MovieDetails extends AppCompatActivity {
+
+    static ActionBar actionBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +53,7 @@ public class MovieDetails extends AppCompatActivity {
         setContentView(R.layout.activity_movie_details);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        actionBar = getSupportActionBar();
 
         if (savedInstanceState == null) {
             Bundle arguments = new Bundle();
@@ -67,7 +71,8 @@ public class MovieDetails extends AppCompatActivity {
     /***********************************************************************************************
      * A placeholder fragment containing a simple view.
      **********************************************************************************************/
-    public static class DetailFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
+    public static class DetailFragment extends Fragment
+            implements LoaderManager.LoaderCallbacks<Cursor>, FetchMovieTrailerLink {
 
         private static final String LOG_TAG = DetailFragment.class.getSimpleName();
 
@@ -77,6 +82,11 @@ public class MovieDetails extends AppCompatActivity {
         private static final int DETAIL_LOADER = 0;
         private Uri mUri;
         static final String DETAIL_URI = "URI";
+        protected Context mContext;
+        protected View mRootView;
+        // YouTube player view
+        private YouTubePlayerView youTubeView;
+        private static final int RECOVERY_DIALOG_REQUEST = 1;
 
         private static final String[] MOVIE_COLUMNS = {
                 // In this case the id needs to be fully qualified with a table name, since
@@ -127,7 +137,8 @@ public class MovieDetails extends AppCompatActivity {
             if (arguments != null) {
                 mUri = arguments.getParcelable(DetailFragment.DETAIL_URI);
             }
-            return inflater.inflate(R.layout.fragment_detail, container, false);
+            mRootView = inflater.inflate(R.layout.fragment_detail, container, false);
+            return mRootView;
         }
 
         @Override
@@ -163,6 +174,7 @@ public class MovieDetails extends AppCompatActivity {
         @Override
         public void onActivityCreated(Bundle savedInstanceState) {
             getLoaderManager().initLoader(DETAIL_LOADER, null, this);
+            mContext = getActivity();
             super.onActivityCreated(savedInstanceState);
         }
 
@@ -203,27 +215,6 @@ public class MovieDetails extends AppCompatActivity {
             Log.i(LOG_TAG, "SVS DATA.toString()" + data.toString());
 
 
-//            String movieTitle = data.getString(COL_ORGINAL_TITLE);
-//            String movieOverview = data.getString(COL_MOVIE_OVERVIEW);
-//            String backdropPath = data.getString(COL_BACKDROP_PATH);
-
-//            String weatherDescription =
-//                    data.getString(COL_WEATHER_DESC);
-//
-//            boolean isMetric = Utility.isMetric(getActivity());
-//
-//            String high = Utility.formatTemperature(
-//                    data.getDouble(COL_WEATHER_MAX_TEMP), isMetric);
-//
-//            String low = Utility.formatTemperature(
-//                    data.getDouble(COL_WEATHER_MIN_TEMP), isMetric);
-//
-//            mForecast = String.format("%s - %s - %s/%s", dateString, weatherDescription, high, low);
-
-//            TextView detailTextView = (TextView)getView().findViewById(R.id.detail_text);
-//            detailTextView.setText(mForecast);
-
-
             //--------------------------------------------------------------------------------------
             // Fetch more movie details.
 
@@ -240,6 +231,7 @@ public class MovieDetails extends AppCompatActivity {
             int idx_movieTitle = data.getColumnIndex(MovieContract.MovieEntry.COLUMN_ORIGINAL_TITLE);
             String movieTitle = data.getString(idx_movieTitle);
 
+            actionBar.setTitle(movieTitle);
             TextView movieTitleTextView = (TextView) getView().findViewById(R.id.tv_movie_title);
             movieTitleTextView.setText(movieTitle);
 
@@ -270,30 +262,51 @@ public class MovieDetails extends AppCompatActivity {
 //            if (mShareActionProvider != null) {
 //                mShareActionProvider.setShareIntent(createShareForecastIntent());
 //            }
+
+            FetchMovieDetails fetchMovieDetails = new FetchMovieDetails(mContext, this);
+            fetchMovieDetails.execute(data.getString(COL_MOVIE_ID));
+
         }
 
         @Override
         public void onLoaderReset(Loader<Cursor> loader) {
 
         }
+
+        @Override
+        public void setTrailerLink(String str) {
+
+            TextView textViewYL = (TextView) mRootView.findViewById(R.id.tv_youtube_link);
+            textViewYL.setText(" LINK: " + str);
+//
+//            // Initializing video player with developer key
+//            youTubeView.initialize(BuildConfig.YOUTUBE_KEY, this);
+            PlayerYouTubeFrag myFragment = PlayerYouTubeFrag.newInstance(str);
+            getChildFragmentManager().beginTransaction().replace(R.id.fragment_youtube_container, myFragment).commit();
+        }
+
     }
 
     /***********************************************************************************************
      * FETCH MOVIE DETAILS
      **********************************************************************************************/
-    public class FetchMovieDetails extends AsyncTask<String, Void, Void> {
+    public static class FetchMovieDetails extends AsyncTask<String, String, String> {
 
         private final String LOG_TAG = FetchMovieData.class.getSimpleName();
         private final Context mContext;
 
-        public FetchMovieDetails(Context context) {
+        FetchMovieTrailerLink fetchMovieTrailerLink;
+
+        public FetchMovieDetails(Context context, FetchMovieTrailerLink fetchMovieTrailerLink) {
             mContext = context;
+            this.fetchMovieTrailerLink = fetchMovieTrailerLink;
         }
 
         private String sortBySetting = "";
+        String youtubeSubLink = "";
 
         @Override
-        protected Void doInBackground(String... params) {
+        protected String doInBackground(String... params) {
 
             // These two need to be declared outside the try/catch
             // so that they can be closed in the finally block.
@@ -310,15 +323,15 @@ public class MovieDetails extends AppCompatActivity {
                 //http://api.themoviedb.org/3/discover/movie?sort_by=popularity.desc&api_key=f01dcea8e11e59d50adc583315f97d86
 //            http://api.themoviedb.org/3/genre/movie/list?api_key=f01dcea8e11e59d50adc583315f97d86
 //            https://api.themoviedb.org/3/movie/11?api_key=f01dcea8e11e59d50adc583315f97d86&append_to_response=releases,trailers
+//                https://youtu.be/
 
-                final String FORECAST_BASE_URL = "http://api.themoviedb.org/3/discover/movie?";
-                final String SORT_BY = "sort_by";
-                String sort_by = "popularity.desc";
-                sortBySetting = sort_by; //Utility.getSortBySetting(mContext);
+                final String MOVIE_TRAILER_BASE_URL = "https://api.themoviedb.org/3/movie/";
+                final String APPEND_TO_RESPONSE = "append_to_response";
+                final String trailers = "trailers";
                 final String APPID_PARAM = "api_key";
 
-                Uri builtUri = Uri.parse(FORECAST_BASE_URL).buildUpon()
-                        .appendQueryParameter(SORT_BY, params[0]) //sort_by
+                Uri builtUri = Uri.parse(MOVIE_TRAILER_BASE_URL).buildUpon().appendPath(params[0])
+                        .appendQueryParameter(APPEND_TO_RESPONSE, trailers) //sort_by
                         .appendQueryParameter(APPID_PARAM, BuildConfig.THE_MOVIE_DB_API_KEY)
                         .build();
 
@@ -351,8 +364,8 @@ public class MovieDetails extends AppCompatActivity {
                     return null;
                 }
                 forecastJsonStr = buffer.toString();
-                //Log.i(LOG_TAG, forecastJsonStr);
-                populateMoviePosterURLS(forecastJsonStr);
+                youtubeSubLink = populateMoviePosterURLS(forecastJsonStr);
+                //tv_youtube_link
 
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Error ", e);
@@ -374,127 +387,90 @@ public class MovieDetails extends AppCompatActivity {
                 }
             }
 
-//        try {
-//            return populateMoviePosterURLS(forecastJsonStr);
-//        } catch (JSONException e) {
-//            Log.e(LOG_TAG, e.getMessage(), e);
-//            e.printStackTrace();
-//        }
-
-            return null;
+            return youtubeSubLink;
         }
 
-        private String[] populateMoviePosterURLS(String forecastJsonStr) throws JSONException {
+        private String populateMoviePosterURLS(String jsonObjectString) throws JSONException {
+            final String TRAILERS = "trailers";
+            final String YOUTUBE = "youtube";
+            final String SOURCE = "source";
 
+            JSONObject movieDetailsJson = new JSONObject(jsonObjectString);
+            JSONObject jsonObjectTrailers = movieDetailsJson.getJSONObject(TRAILERS);
+            JSONArray jsonArrayYoutube = jsonObjectTrailers.getJSONArray(YOUTUBE);
+            JSONObject jsonObjectYoutube0 = jsonArrayYoutube.getJSONObject(0);
+            String youtubeSubLink = jsonObjectYoutube0.getString(SOURCE);
 
-            String base_url = "http://image.tmdb.org/t/p/w185/";
-            String[] results;
-
-            final String JSON_PROP_RESULTS = "results";
-            final String JSON_PROP_TITLE = "title";
-            final String JSON_PROP_POSTER_PATH = "poster_path";
-            final String JSON_PROP_OVERVIEW = "overview";
-            final String JSON_PROP_RELEASE_DATE = "release_date";
-            final String JSON_PROP_GENRE_IDS = "genre_ids";
-            final String JSON_PROP_ID = "id";
-            final String JSON_PROP_ORIGINAL_TITLE = "original_title";
-            final String JSON_PROP_BACKDROP_PATH = "backdrop_path";
-            final String JSON_PROP_POPULARITY = "popularity";
-            final String JSON_PROP_VOTE_COUNT = "vote_count";
-            final String JSON_PROP_VOTE_AVERAGE = "vote_average";
-            final String JSON_PROP_ORIGINAL_LANGUAGE = "original_language";
-            final String base_poster_path = "http://image.tmdb.org/t/p/w500/";
-
-
-            JSONObject forecastJson = new JSONObject(forecastJsonStr);
-            JSONArray movieArray = forecastJson.getJSONArray(JSON_PROP_RESULTS);
-            results = new String[movieArray.length()];
-
-            // Insert the new weather information into the database
-            Vector<ContentValues> cVVector = new Vector<ContentValues>(movieArray.length());
-
-
-            for (int i = 0; i < movieArray.length(); i++) {
-
-                JSONObject singleMovie = movieArray.getJSONObject(i);
-
-                String title = singleMovie.getString(JSON_PROP_TITLE);
-                String poster_path = singleMovie.getString(JSON_PROP_POSTER_PATH);
-                String overview = singleMovie.getString(JSON_PROP_OVERVIEW);
-                String release_date = singleMovie.getString(JSON_PROP_RELEASE_DATE);
-                int movie_id = singleMovie.getInt(JSON_PROP_ID);
-                String original_title = singleMovie.getString(JSON_PROP_ORIGINAL_TITLE);
-                String original_language = singleMovie.getString(JSON_PROP_ORIGINAL_LANGUAGE);
-                String backdrop_path = singleMovie.getString(JSON_PROP_BACKDROP_PATH);
-                long popularity = singleMovie.getLong(JSON_PROP_POPULARITY);
-                int vote_count = singleMovie.getInt(JSON_PROP_VOTE_COUNT);
-                long vote_average = singleMovie.getLong(JSON_PROP_VOTE_AVERAGE);
-                JSONArray genre_ids_array = singleMovie.getJSONArray(JSON_PROP_GENRE_IDS);
-                String genre_ids = "";
-                for (int id_count = 0; id_count < genre_ids_array.length(); id_count++) {
-                    genre_ids = genre_ids + genre_ids_array.getInt(id_count) + ",";
-                }
-
-                ContentValues movieValues = new ContentValues();
-
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-                Date date = null;
-                try {
-                    date = (Date) formatter.parse(release_date);
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-//            Log.i(LOG_TAG,"DATE SVS--" + date);
-                long mills;
-                if (date != null) {
-                    mills = date.getTime();
-                } else {
-                    mills = System.currentTimeMillis();
-                }
-                movieValues.put(MovieContract.MovieEntry.COLUMN_MOVIE_ID, movie_id);
-                movieValues.put(MovieContract.MovieEntry.COLUMN_SORTBY, sortBySetting);
-                movieValues.put(MovieContract.MovieEntry.COLUMN_ORIGINAL_TITLE, original_title);
-                movieValues.put(MovieContract.MovieEntry.COLUMN_ORIGINAL_LANGUAGE, original_language);
-                movieValues.put(MovieContract.MovieEntry.COLUMN_RELEASE_DATE, mills);
-                movieValues.put(MovieContract.MovieEntry.COLUMN_MOVIE_OVERVIEW, overview);
-                movieValues.put(MovieContract.MovieEntry.COLUMN_GENRE_IDS, genre_ids);
-                movieValues.put(MovieContract.MovieEntry.COLUMN_VOTE_AVERAGE, vote_average);
-                movieValues.put(MovieContract.MovieEntry.COLUMN_VOTE_COUNT, vote_count);
-                movieValues.put(MovieContract.MovieEntry.COLUMN_POPULARITY, popularity);
-                movieValues.put(MovieContract.MovieEntry.COLUMN_POSTER_PATH, base_poster_path + poster_path);
-                movieValues.put(MovieContract.MovieEntry.COLUMN_BACKDROP_PATH, base_poster_path + backdrop_path);
-
-                cVVector.add(movieValues);
-
-//            results[i] = base_url + poster_path;
-//            Log.i(LOG_TAG, base_url + url);
-            }
-            int inserted = 0;
-            // add to database
-            if (cVVector.size() > 0) {
-                ContentValues[] cvArray = new ContentValues[cVVector.size()];
-                cVVector.toArray(cvArray);
-                mContext.getContentResolver().delete(MovieContract.MovieEntry.CONTENT_URI, null, null); //.bulkInsert(MovieContract.MovieEntry.CONTENT_URI, cvArray);
-                inserted = mContext.getContentResolver().bulkInsert(MovieContract.MovieEntry.CONTENT_URI, cvArray);
-            }
-
-            Log.d(LOG_TAG, "FetchMovieData task Complete. " + inserted + " Inserted");
-
-
-            return results;
+            return youtubeSubLink;
         }
 
-//    @Override
-//    protected void onPostExecute(String[] result) {
-//        Log.i("SVS", "Into ONPOSTEXECUTE");
-//        if (result != null) {
-////                for (String moviePosterURLS : result) {
-////                    Log.i("SVS", moviePosterURLS);
-////                }
-//            MainActivityFragment.mMovieAdapter.refreshEvents(result);
-//            // New data is back from the server.  Hooray!
+        @Override
+        protected void onPostExecute(String str) {
+            super.onPostExecute(str);
+            this.fetchMovieTrailerLink.setTrailerLink(str);
+        }
+
+    }
+
+    public interface FetchMovieTrailerLink {
+        void setTrailerLink(String str);
+    }
+
+    public static class PlayerYouTubeFrag extends YouTubePlayerSupportFragment {
+
+        private String currentVideoID = "_oEA18Y8gM0";
+        private YouTubePlayer activePlayer;
+
+        public static PlayerYouTubeFrag newInstance(String url) {
+
+            PlayerYouTubeFrag playerYouTubeFrag = new PlayerYouTubeFrag();
+
+            Bundle bundle = new Bundle();
+            bundle.putString("url", url);
+
+            playerYouTubeFrag.setArguments(bundle);
+            playerYouTubeFrag.init();
+
+            return playerYouTubeFrag;
+        }
+
+        private void init() {
+
+            initialize(BuildConfig.YOUTUBE_KEY, new YouTubePlayer.OnInitializedListener() {
+
+                @Override
+                public void onInitializationSuccess(YouTubePlayer.Provider provider, YouTubePlayer youTubePlayer, boolean wasRestored) {
+                    if (!wasRestored) {
+
+                        // loadVideo() will auto play video
+                        // Use cueVideo() method, if you don't want to play it automatically
+                        youTubePlayer.cueVideo(getArguments().getString("url"), 0);
+
+                        // Hiding player controls
+                        youTubePlayer.setPlayerStyle(YouTubePlayer.PlayerStyle.DEFAULT);//.CHROMELESS);
+                    }
+                }
+
+                @Override
+                public void onInitializationFailure(YouTubePlayer.Provider provider,
+                                                    YouTubeInitializationResult errorReason) {
+
+                    if (errorReason.isUserRecoverableError()) {
+                        errorReason.getErrorDialog(getActivity(), 1).show();
+                    } else {
+                        String errorMessage = String.format(
+                                getString(R.string.error_player), errorReason.toString());
+                        Toast.makeText(getActivity(), errorMessage, Toast.LENGTH_LONG).show();
+                    }
+                }
+                
+            });
+        }
+
+
+//        @Override
+//        public void onYouTubeVideoPaused() {
+//            activePlayer.pause();
 //        }
-//
-//    }
     }
 }

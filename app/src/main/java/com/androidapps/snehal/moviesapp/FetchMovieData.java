@@ -50,6 +50,11 @@ public class FetchMovieData extends AsyncTask<String, Void, Void> {
 
         try {
 
+            //http://image.tmdb.org/t/p/w185//jjBgi2r5cRt36xF6iNUEhzscEcb.jpg
+            //http://api.themoviedb.org/3/discover/movie?sort_by=popularity.desc&api_key=f01dcea8e11e59d50adc583315f97d86
+//            http://api.themoviedb.org/3/genre/movie/list?api_key=f01dcea8e11e59d50adc583315f97d86
+//            https://api.themoviedb.org/3/movie/11?api_key=f01dcea8e11e59d50adc583315f97d86&append_to_response=releases,trailers
+
             final String FORECAST_BASE_URL = "http://api.themoviedb.org/3/discover/movie?";
             final String SORT_BY = "sort_by";
             String sort_by = "popularity.desc";
